@@ -53,7 +53,7 @@ class Value(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     value = Column(Text, nullable=False)
     field_id = Column(Integer, ForeignKey('field.id'), nullable=False)
-    entity_id = Column(BigInteger, ForeignKey('entity.id'), nullable=False)
+    entity_id = Column(Integer, ForeignKey('entity.id'), nullable=False)
     deleted = Column(Boolean, nullable=False, default=False)
 
     entity = relationship('Entity')
@@ -71,8 +71,6 @@ def create_all():
 def drop_all():
     Base.metadata.drop_all(engine)
 
-Session = sessionmaker(bing=engine)
+Session = sessionmaker(bind=engine)
 session = Session()
 
-drop_all()
-create_all()
