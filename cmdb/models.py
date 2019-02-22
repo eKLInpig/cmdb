@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, Text, Boolean
 from sqlalchemy import ForeignKey, UniqueConstraint, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-# from . import config
+from . import config
 
 
 Base = declarative_base()
@@ -61,7 +61,7 @@ class Value(Base):
 
 
 # 引擎
-engine = create_engine((config.URL, echo=config.DATABASE_DEBUG))
+engine = create_engine(config.URL, echo=config.DATABASE_DEBUG)
 
 # 创建表
 def create_all():
