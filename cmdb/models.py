@@ -3,9 +3,14 @@ from sqlalchemy import ForeignKey, UniqueConstraint, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from . import config
+import json
+from .types import get_instance
+from .utils import getlogger
 
+logger = getlogger(__name__, "D:log")
 
 Base = declarative_base()
+
 
 # 逻辑表
 class Schema(Base):
@@ -13,10 +18,43 @@ class Schema(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(48), nullable=False, unique=True)
-    desc = Column(String(128), nullable=False)
+    desc = Column(String(128), nullable=True)
     deleted = Column(Boolean, nullable=False, default=False)
 
     fields = relationship('Field')
+
+
+# meta解析
+class Reference:
+    def __init__(self, ref: dict):
+        self.schema = ref['schema']  # 引用的schema
+        self.field = ref['field']  # 引用的field
+        self.on_delete = ref.get('on_delete', 'disable')  # cascade,set_null,disable
+        self.on_update = ref.get('on_update', 'disable')  # cascade,disable
+
+
+class FieldMeta:
+    def __init__(self, metastr: str):
+        meta = json.loads(metastr)
+
+        if isinstance(meta, str):
+            self.instance = get_instance(meta['type'])
+        else:
+            option = meta['type'].get('option')
+            if option:
+                self.instance = get_instance(meta['type']['name'], **option)
+            else:
+                self.instance = get_instance(meta['type']['name'])
+        self.unique = meta.get('unique', False)
+        self.nullable = meta.get('nullable', True)
+        self.default = meta.get('default')
+        self.multi = meta.get('multi', False)
+        # 引用是一个json对象
+        ref = meta.get('reference')
+        if ref:
+            self.reference = Reference(ref)
+        else:
+            self.reference = None
 
 
 class Field(Base):
@@ -26,12 +64,16 @@ class Field(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(48), nullable=False)
     schema_id = Column(Integer, ForeignKey('schema.id'), nullable=False)
-    meta = Column(Text, nullable=False)
+    meta = Column(Text, nullable=True)
     ref_id = Column(Integer, ForeignKey('field.id'), nullable=True)
     deleted = Column(Boolean, nullable=False, default=False)
 
     schema = relationship('Schema')
-    ref = relationship('Field', uselist=False) # 1对1，被引用的id
+    ref = relationship('Field', uselist=False)  # 1对1，被引用的id
+
+    @property  # 增加一个属性将meta解析成对象，注意不要使用metadata这个名字
+    def meta_data(self):
+        return FieldMeta(self.meta)
 
 
 # 逻辑表的记录表
@@ -63,14 +105,16 @@ class Value(Base):
 # 引擎
 engine = create_engine(config.URL, echo=config.DATABASE_DEBUG)
 
+
 # 创建表
 def create_all():
     Base.metadata.create_all(engine)
+
 
 # 删除表
 def drop_all():
     Base.metadata.drop_all(engine)
 
+
 Session = sessionmaker(bind=engine)
 session = Session()
-
