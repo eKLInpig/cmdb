@@ -73,3 +73,6 @@ def drop_all():
 
 Session = sessionmaker(bing=engine)
 session = Session()
+
+drop_all()
+create_all()
