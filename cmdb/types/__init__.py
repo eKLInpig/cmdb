@@ -2,7 +2,7 @@ import ipaddress
 from ..models import session, Schema, Field, Entity, Value, FieldMeta
 from ..utils import paginate
 import logging
-import math
+
 
 logger = logging.getLogger(__name__)
 

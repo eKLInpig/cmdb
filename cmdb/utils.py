@@ -1,4 +1,5 @@
 import logging
+import math
 
 # 日志
 def getlogger(mod_name:str, filepath:str="D:log"):
@@ -22,5 +23,6 @@ def paginate(page, size, query):
         result = query.limit(size).offset(size * (page - 1)).all()
         return result, (page, size, count, pages)
     except Exception as e:
-        logger.error('{}'.format(e))
+        pass
+        # logger.error('{}'.format(e))
 
